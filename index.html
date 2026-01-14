@@ -701,7 +701,7 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'http://localhost:5000/api';
+        const API_BASE_URL = '/api';
         
         // Canvas setup
         const canvas = document.getElementById('vendorSignaturePad');
@@ -1046,7 +1046,7 @@
             try {
                 document.getElementById('successModal').classList.add('show');
                 
-                const response = await fetch(`${API_BASE_URL}/agreements`, {
+                const response = await fetch(`${API_BASE_URL}/submit`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1058,14 +1058,24 @@
                     throw new Error('Failed to submit agreement');
                 }
                 
-                const result = await response.json();
-                document.getElementById('agreementId').textContent = `Agreement ID: ${result.id}`;
+                // Handle PDF download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ZNZNOW_Agreement_${formData.vendorName.replace(/\s+/g, '_')}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
                 
+                // Close modal and reset
                 setTimeout(() => {
+                    document.getElementById('successModal').classList.remove('show');
                     document.getElementById('vendorForm').reset();
                     clearSignature();
                     initializeDates();
-                    showAlert('Agreement submitted successfully!', 'success');
+                    showAlert('Agreement generated and downloaded successfully!', 'success');
+                    localStorage.removeItem('vendorAgreementDraft');
                 }, 2000);
                 
             } catch (error) {
