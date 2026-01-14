@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, agreements, InsertAgreement, Agreement } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,60 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Agreement-related database functions
+
+export async function createAgreement(agreement: InsertAgreement): Promise<number> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.insert(agreements).values(agreement);
+  return result[0].insertId;
+}
+
+export async function getAgreementById(id: number): Promise<Agreement | undefined> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.select().from(agreements).where(eq(agreements.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateAgreement(id: number, data: Partial<InsertAgreement>): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.update(agreements).set(data).where(eq(agreements.id, id));
+}
+
+export async function getAllAgreements(): Promise<Agreement[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  return await db.select().from(agreements).orderBy(desc(agreements.createdAt));
+}
+
+export async function getAgreementsByStatus(status: Agreement["status"]): Promise<Agreement[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  return await db.select().from(agreements).where(eq(agreements.status, status)).orderBy(desc(agreements.createdAt));
+}
+
+export async function getAgreementsByType(type: Agreement["agreementType"]): Promise<Agreement[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  return await db.select().from(agreements).where(eq(agreements.agreementType, type)).orderBy(desc(agreements.createdAt));
+}
