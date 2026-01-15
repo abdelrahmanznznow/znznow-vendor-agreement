@@ -102,32 +102,82 @@ export function SignatureCanvas({
       ctx.stroke();
 
       lastPointRef.current = coords;
-      setHasSignature(true);
+      
+      // Mark as having signature immediately
+      if (!hasSignature) {
+        setHasSignature(true);
+      }
     },
-    [isDrawing, getCoordinates]
+    [isDrawing, getCoordinates, hasSignature]
   );
 
   const stopDrawing = useCallback(() => {
-    if (isDrawing && hasSignature) {
+    setIsDrawing(false);
+    lastPointRef.current = null;
+    
+    // Export signature after a short delay to ensure drawing is complete
+    setTimeout(() => {
       const canvas = canvasRef.current;
-      if (canvas) {
+      if (canvas && hasSignature) {
         const dataUrl = canvas.toDataURL("image/png");
         onSignatureChange(dataUrl);
       }
-    }
-    setIsDrawing(false);
-    lastPointRef.current = null;
-  }, [isDrawing, hasSignature, onSignatureChange]);
+    }, 50);
+  }, [hasSignature, onSignatureChange]);
 
   const clearSignature = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
 
+    // Clear the canvas
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
+    
+    // Reset state
     setHasSignature(false);
+    lastPointRef.current = null;
+    
+    // Notify parent that signature is cleared
     onSignatureChange(null);
+  }, [width, height, onSignatureChange]);
+
+  const drawTestSignature = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    // Clear canvas first
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+
+    // Draw a test signature
+    ctx.strokeStyle = "#1a365d";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    // Draw initials "AO" as a test signature
+    ctx.beginPath();
+    ctx.moveTo(30, 50);
+    ctx.lineTo(30, 120);
+    ctx.lineTo(70, 50);
+    ctx.lineTo(70, 120);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(100, 50);
+    ctx.arc(115, 85, 35, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Mark as having signature
+    setHasSignature(true);
+    
+    // Export signature
+    setTimeout(() => {
+      const dataUrl = canvas.toDataURL("image/png");
+      onSignatureChange(dataUrl);
+    }, 50);
   }, [width, height, onSignatureChange]);
 
   return (
@@ -161,8 +211,22 @@ export function SignatureCanvas({
           className="flex items-center gap-1"
         >
           <Eraser className="h-4 w-4" />
-          Clear
+          Clear Signature
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={drawTestSignature}
+          className="flex items-center gap-1 text-xs"
+        >
+          Test Signature
+        </Button>
+        {hasSignature && (
+          <div className="text-xs text-green-600 flex items-center">
+            ✓ Signature captured
+          </div>
+        )}
       </div>
     </div>
   );

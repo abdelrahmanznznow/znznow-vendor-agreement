@@ -25,10 +25,8 @@ import {
   Loader2,
   UtensilsCrossed,
   Compass,
-  MessageCircle,
-  AlertCircle
+  MessageCircle
 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type AgreementType = "tours" | "restaurant";
 
@@ -67,7 +65,6 @@ export default function VendorAgreementForm() {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [showAgreementViewer, setShowAgreementViewer] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [submissionSuccess, setSubmissionSuccess] = useState<{
     agreementId: number;
     pdfUrl: string;
@@ -88,18 +85,14 @@ export default function VendorAgreementForm() {
   // Submit mutation
   const submitMutation = trpc.agreements.submit.useMutation({
     onSuccess: (data) => {
-      console.log("Agreement submitted successfully:", data);
       setSubmissionSuccess({
         agreementId: data.agreementId,
         pdfUrl: data.pdfUrl,
       });
       toast.success("Agreement submitted successfully!");
-      setValidationErrors([]);
     },
     onError: (error) => {
-      console.error("Submission error:", error);
       toast.error(error.message || "Failed to submit agreement");
-      setValidationErrors([error.message || "Failed to submit agreement"]);
     },
     onSettled: () => {
       setIsSubmitting(false);
@@ -120,44 +113,32 @@ export default function VendorAgreementForm() {
 
   const handleInputChange = (field: keyof FormData, value: string | boolean | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    setValidationErrors([]); // Clear errors when user starts typing
   };
 
   const validateForm = (): string[] => {
     const errors: string[] = [];
-    if (!formData.vendorName?.trim()) errors.push("Vendor name is required");
-    if (!formData.vendorAddress?.trim()) errors.push("Address is required");
-    if (!formData.vendorEmail?.trim()) errors.push("Email is required");
-    if (!formData.vendorPhone?.trim()) errors.push("Phone number is required");
-    if (!formData.contactPersonName?.trim()) errors.push("Contact person name is required");
-    if (!formData.partnershipLevel?.trim()) errors.push("Partnership level is required");
-    if (!formData.signature) errors.push("Signature is required - please sign the canvas");
+    if (!formData.vendorName) errors.push("Vendor name is required");
+    if (!formData.vendorAddress) errors.push("Address is required");
+    if (!formData.vendorEmail) errors.push("Email is required");
+    if (!formData.vendorPhone) errors.push("Phone number is required");
+    if (!formData.contactPersonName) errors.push("Contact person name is required");
+    if (!formData.partnershipLevel) errors.push("Partnership level is required");
+    if (!formData.signature) errors.push("Signature is required");
     if (!formData.agreedToTerms) errors.push("You must agree to the terms and conditions");
     return errors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submission initiated");
     
     const errors = validateForm();
     if (errors.length > 0) {
-      console.log("Validation errors:", errors);
-      setValidationErrors(errors);
       errors.forEach((error) => toast.error(error));
       return;
     }
 
-    setValidationErrors([]);
     setIsSubmitting(true);
     
-    console.log("Submitting form data:", {
-      agreementType,
-      vendorName: formData.vendorName,
-      partnershipLevel: formData.partnershipLevel,
-      hasSignature: !!formData.signature,
-    });
-
     submitMutation.mutate({
       agreementType,
       vendorName: formData.vendorName,
@@ -183,7 +164,6 @@ export default function VendorAgreementForm() {
   // Email mutation
   const sendEmailMutation = trpc.agreements.sendEmail.useMutation({
     onSuccess: (data) => {
-      console.log("Email sent successfully:", data);
       if (data.success) {
         toast.success("Agreement sent to your email!");
       } else {
@@ -191,7 +171,6 @@ export default function VendorAgreementForm() {
       }
     },
     onError: (error) => {
-      console.error("Email error:", error);
       toast.error(error.message || "Failed to send email");
     },
   });
@@ -203,24 +182,28 @@ export default function VendorAgreementForm() {
   );
 
   const handleSendEmail = () => {
-    console.log("handleSendEmail called with agreementId:", submissionSuccess?.agreementId);
+    console.log("handleSendEmail called", { submissionSuccess });
     if (submissionSuccess?.agreementId) {
+      console.log("Calling sendEmail mutation with agreementId:", submissionSuccess.agreementId);
       sendEmailMutation.mutate({ agreementId: submissionSuccess.agreementId });
     } else {
-      console.error("No agreement ID available");
+      console.error("No agreement ID available for email");
       toast.error("Unable to send email: Agreement ID not found");
     }
   };
 
   const handleShareWhatsApp = async () => {
-    console.log("handleShareWhatsApp called with agreementId:", submissionSuccess?.agreementId);
+    console.log("handleShareWhatsApp called", { submissionSuccess });
     if (submissionSuccess?.agreementId) {
+      console.log("Fetching WhatsApp link for agreementId:", submissionSuccess.agreementId);
       try {
         const result = await fetchWhatsAppLink();
         console.log("WhatsApp link result:", result);
         if (result.data?.whatsappLink) {
+          console.log("Opening WhatsApp link:", result.data.whatsappLink);
           window.open(result.data.whatsappLink, "_blank");
         } else {
+          console.error("No WhatsApp link in response", result);
           toast.error("Unable to generate WhatsApp link");
         }
       } catch (error) {
@@ -228,6 +211,7 @@ export default function VendorAgreementForm() {
         toast.error("Failed to generate WhatsApp link");
       }
     } else {
+      console.error("No agreement ID available for WhatsApp");
       toast.error("Unable to share: Agreement ID not found");
     }
   };
@@ -292,7 +276,6 @@ export default function VendorAgreementForm() {
                 onClick={() => {
                   setSubmissionSuccess(null);
                   setFormData(initialFormData);
-                  setValidationErrors([]);
                 }}
                 className="w-full"
               >
@@ -338,21 +321,6 @@ export default function VendorAgreementForm() {
       </header>
 
       <main className="container py-8 max-w-4xl">
-        {/* Validation Errors Alert */}
-        {validationErrors.length > 0 && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <p className="font-semibold mb-2">Please fix the following errors:</p>
-              <ul className="list-disc list-inside space-y-1">
-                {validationErrors.map((error, i) => (
-                  <li key={i} className="text-sm">{error}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
-
         <form onSubmit={handleSubmit}>
           {/* Agreement Type Selection */}
           <Card className="mb-6">
@@ -384,7 +352,7 @@ export default function VendorAgreementForm() {
                 </TabsContent>
                 <TabsContent value="restaurant" className="mt-4">
                   <p className="text-sm text-muted-foreground">
-                    For restaurants, cafes, bars, and food service establishments in Zanzibar.
+                    For restaurants, cafes, food vendors, and dining establishments in Zanzibar.
                   </p>
                 </TabsContent>
               </Tabs>
@@ -394,28 +362,35 @@ export default function VendorAgreementForm() {
           {/* Partnership Level */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                Partnership Level
-              </CardTitle>
+              <CardTitle>Partnership Level</CardTitle>
               <CardDescription>
                 Select your preferred partnership package
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={formData.partnershipLevel} onValueChange={(value) => handleInputChange("partnershipLevel", value)}>
-                <div className="space-y-3">
-                  {partnershipLevels?.map((level) => (
-                    <div key={level.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
+              {partnershipLevels && (
+                <RadioGroup
+                  value={formData.partnershipLevel}
+                  onValueChange={(v) => handleInputChange("partnershipLevel", v)}
+                  className="grid gap-4"
+                >
+                  {partnershipLevels.map((level) => (
+                    <div key={level.id} className="flex items-start space-x-3">
                       <RadioGroupItem value={level.id} id={level.id} className="mt-1" />
                       <Label htmlFor={level.id} className="flex-1 cursor-pointer">
-                        <p className="font-semibold">{level.name}</p>
-                        <p className="text-sm text-muted-foreground">{level.description}</p>
+                        <div className="font-medium">{level.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Commission: {level.commission}
+                          {"userFee" in level && ` | User Fee: ${level.userFee}`}
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {level.description}
+                        </div>
                       </Label>
                     </div>
                   ))}
-                </div>
-              </RadioGroup>
+                </RadioGroup>
+              )}
             </CardContent>
           </Card>
 
@@ -431,77 +406,87 @@ export default function VendorAgreementForm() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="vendorName">Business Name *</Label>
-                <Input
-                  id="vendorName"
-                  placeholder="Enter your business name"
-                  value={formData.vendorName}
-                  onChange={(e) => handleInputChange("vendorName", e.target.value)}
-                  className={validationErrors.some(e => e.includes("Vendor name")) ? "border-red-500" : ""}
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="vendorName">Business Name *</Label>
+                  <Input
+                    id="vendorName"
+                    value={formData.vendorName}
+                    onChange={(e) => handleInputChange("vendorName", e.target.value)}
+                    placeholder="Enter your business name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vendorRegistrationNo">Registration Number</Label>
+                  <Input
+                    id="vendorRegistrationNo"
+                    value={formData.vendorRegistrationNo}
+                    onChange={(e) => handleInputChange("vendorRegistrationNo", e.target.value)}
+                    placeholder="Business registration number"
+                  />
+                </div>
               </div>
-
-              <div>
-                <Label htmlFor="vendorRegistrationNo">Registration Number</Label>
-                <Input
-                  id="vendorRegistrationNo"
-                  placeholder="Business registration number"
-                  value={formData.vendorRegistrationNo}
-                  onChange={(e) => handleInputChange("vendorRegistrationNo", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="vendorAddress">Business Address *</Label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="vendorAddress" className="flex items-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  Business Address *
+                </Label>
                 <Input
                   id="vendorAddress"
-                  placeholder="Full business address"
                   value={formData.vendorAddress}
                   onChange={(e) => handleInputChange("vendorAddress", e.target.value)}
-                  className={validationErrors.some(e => e.includes("Address")) ? "border-red-500" : ""}
+                  placeholder="Full business address"
+                  required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="vendorEmail">Email Address *</Label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="vendorEmail" className="flex items-center gap-1">
+                    <Mail className="w-4 h-4" />
+                    Email Address *
+                  </Label>
                   <Input
                     id="vendorEmail"
                     type="email"
-                    placeholder="business@example.com"
                     value={formData.vendorEmail}
                     onChange={(e) => handleInputChange("vendorEmail", e.target.value)}
-                    className={validationErrors.some(e => e.includes("Email")) ? "border-red-500" : ""}
+                    placeholder="business@example.com"
+                    required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="vendorPhone">Phone Number *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="vendorPhone" className="flex items-center gap-1">
+                    <Phone className="w-4 h-4" />
+                    Phone Number *
+                  </Label>
                   <Input
                     id="vendorPhone"
                     type="tel"
-                    placeholder="+255 XXX XXX XXX"
                     value={formData.vendorPhone}
                     onChange={(e) => handleInputChange("vendorPhone", e.target.value)}
-                    className={validationErrors.some(e => e.includes("Phone")) ? "border-red-500" : ""}
+                    placeholder="+255 XXX XXX XXX"
+                    required
                   />
                 </div>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="vendorWhatsapp">WhatsApp Number (for notifications)</Label>
                 <Input
                   id="vendorWhatsapp"
                   type="tel"
-                  placeholder="+255 XXX XXX XXX"
                   value={formData.vendorWhatsapp}
                   onChange={(e) => handleInputChange("vendorWhatsapp", e.target.value)}
+                  placeholder="+255 XXX XXX XXX"
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* Authorized Signatory */}
+          {/* Contact Person */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -513,29 +498,33 @@ export default function VendorAgreementForm() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="contactPersonName">Full Name *</Label>
-                <Input
-                  id="contactPersonName"
-                  placeholder="Enter full name"
-                  value={formData.contactPersonName}
-                  onChange={(e) => handleInputChange("contactPersonName", e.target.value)}
-                  className={validationErrors.some(e => e.includes("Contact person")) ? "border-red-500" : ""}
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="contactPersonName">Full Name *</Label>
+                  <Input
+                    id="contactPersonName"
+                    value={formData.contactPersonName}
+                    onChange={(e) => handleInputChange("contactPersonName", e.target.value)}
+                    placeholder="Enter full name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactPersonTitle">Title/Position</Label>
+                  <Input
+                    id="contactPersonTitle"
+                    value={formData.contactPersonTitle}
+                    onChange={(e) => handleInputChange("contactPersonTitle", e.target.value)}
+                    placeholder="e.g., Owner, Manager, Director"
+                  />
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="contactPersonTitle">Title/Position</Label>
-                <Input
-                  id="contactPersonTitle"
-                  placeholder="e.g., Owner, Manager, Director"
-                  value={formData.contactPersonTitle}
-                  onChange={(e) => handleInputChange("contactPersonTitle", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="effectiveDate">Effective Date</Label>
+              <div className="space-y-2">
+                <Label htmlFor="effectiveDate" className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  Effective Date
+                </Label>
                 <Input
                   id="effectiveDate"
                   type="date"
@@ -546,91 +535,93 @@ export default function VendorAgreementForm() {
             </CardContent>
           </Card>
 
-          {/* Digital Signature */}
+          {/* Signature Section */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Digital Signature
-              </CardTitle>
+              <CardTitle>Digital Signature</CardTitle>
               <CardDescription>
                 Sign below using your mouse or touch screen
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="font-semibold text-sm mb-2">ZNZNOW Representative (Pre-signed)</p>
-                <div className="flex justify-between items-end">
-                  <div>
-                    <p className="text-sm font-medium">Name: AbdelRahman Ahmed</p>
-                    <p className="text-sm font-medium">Title: Founder & CEO</p>
+            <CardContent className="space-y-6">
+              {/* ZNZNOW Pre-signed Section */}
+              <div className="bg-muted/30 rounded-lg p-4 border">
+                <h4 className="font-medium text-sm mb-3">ZNZNOW Representative (Pre-signed)</h4>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm"><strong>Name:</strong> AbdelRahman Ahmed</p>
+                    <p className="text-sm"><strong>Title:</strong> Founder & CEO</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">AbdelRahman A</p>
-                    <div className="w-16 h-12 bg-white border rounded flex items-center justify-center text-xs text-muted-foreground">
-                      [Stamp]
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <svg width="150" height="40" viewBox="0 0 150 40" className="border-b border-primary/30">
+                      <text x="5" y="30" fontFamily="Brush Script MT, cursive" fontSize="22" fill="#1a365d">AbdelRahman Ahmed</text>
+                    </svg>
+                    <svg width="60" height="60" viewBox="0 0 120 120" className="opacity-80">
+                      <circle cx="60" cy="60" r="55" fill="none" stroke="#1a365d" strokeWidth="2"/>
+                      <circle cx="60" cy="60" r="45" fill="none" stroke="#1a365d" strokeWidth="1"/>
+                      <text x="60" y="35" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="8" fill="#1a365d" fontWeight="bold">ZANZISOUK LTD</text>
+                      <text x="60" y="55" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="14" fill="#1a365d" fontWeight="bold">ZNZNOW</text>
+                      <text x="60" y="72" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="6" fill="#1a365d">ZANZIBAR</text>
+                      <text x="60" y="85" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="6" fill="#1a365d">OFFICIAL</text>
+                    </svg>
                   </div>
                 </div>
               </div>
 
+              {/* Vendor Signature */}
               <div>
-                <Label htmlFor="signature">Your Signature *</Label>
+                <h4 className="font-medium text-sm mb-3">Your Signature *</h4>
                 <SignatureCanvas
                   onSignatureChange={(sig) => handleInputChange("signature", sig)}
                   width={400}
                   height={150}
-                  className={validationErrors.some(e => e.includes("Signature")) ? "border-red-500" : ""}
                 />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Signing as: {formData.contactPersonName || "Contact person name"}, {formData.contactPersonTitle || "Title"}
-                </p>
+                {formData.contactPersonName && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Signing as: <strong>{formData.contactPersonName}</strong>
+                    {formData.contactPersonTitle && `, ${formData.contactPersonTitle}`}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Terms & Conditions */}
+          {/* Terms Agreement */}
           <Card className="mb-6">
             <CardContent className="pt-6">
               <div className="flex items-start space-x-3">
                 <Checkbox
                   id="terms"
                   checked={formData.agreedToTerms}
-                  onCheckedChange={(checked) => handleInputChange("agreedToTerms", checked === true)}
-                  className={validationErrors.some(e => e.includes("terms")) ? "border-red-500" : ""}
+                  onCheckedChange={(checked) => handleInputChange("agreedToTerms", !!checked)}
                 />
-                <Label htmlFor="terms" className="flex-1 cursor-pointer">
-                  <p className="text-sm">
-                    I have read and agree to the <button
-                      type="button"
-                      onClick={() => setShowAgreementViewer(true)}
-                      className="underline text-primary hover:text-primary/80"
-                    >
-                      full terms and conditions
-                    </button> of this vendor partnership agreement. I confirm that I am authorized to sign on behalf of the business named above.
-                  </p>
+                <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
+                  I have read and agree to the{" "}
+                  <button
+                    type="button"
+                    onClick={() => setShowAgreementViewer(true)}
+                    className="text-primary underline hover:no-underline"
+                  >
+                    full terms and conditions
+                  </button>{" "}
+                  of this vendor partnership agreement. I confirm that I am authorized to sign on behalf of the business named above.
                 </Label>
               </div>
             </CardContent>
           </Card>
 
-          {/* Submit Buttons */}
-          <div className="flex gap-3 mb-8">
+          {/* Submit Button */}
+          <div className="flex justify-end gap-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setShowAgreementViewer(true)}
               disabled={!formData.partnershipLevel}
-              className="flex-1"
             >
               <Eye className="w-4 h-4 mr-2" />
               Preview Agreement
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1"
-            >
+            <Button type="submit" disabled={isSubmitting} size="lg">
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -648,15 +639,24 @@ export default function VendorAgreementForm() {
       </main>
 
       {/* Agreement Viewer Modal */}
-      {showAgreementViewer && (
-        <AgreementViewer
-          isOpen={showAgreementViewer}
-          agreementType={agreementType}
-          partnershipLevel={formData.partnershipLevel || "growth"}
-          agreementText={agreementText || ""}
-          onClose={() => setShowAgreementViewer(false)}
-        />
-      )}
+      <AgreementViewer
+        isOpen={showAgreementViewer}
+        onClose={() => setShowAgreementViewer(false)}
+        agreementText={agreementText || "Loading agreement text..."}
+        agreementType={agreementType}
+        partnershipLevel={
+          partnershipLevels?.find((l) => l.id === formData.partnershipLevel)?.name || 
+          formData.partnershipLevel
+        }
+      />
+
+      {/* Footer */}
+      <footer className="border-t bg-white mt-12">
+        <div className="container py-6 text-center text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} Zanzisouk LTD (ZNZNOW). All rights reserved.</p>
+          <p className="mt-1">Migoz Plaza, Nyerere Road, Zanzibar, Tanzania | contact@znznow.com</p>
+        </div>
+      </footer>
     </div>
   );
 }

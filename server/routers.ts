@@ -8,7 +8,7 @@ import { generateAgreementHTML, generatePrintableAgreement } from "./pdfService"
 import { storagePut } from "./storage";
 import { TOURS_PARTNERSHIP_LEVELS, RESTAURANT_PARTNERSHIP_LEVELS, TOURS_AGREEMENT_TEXT, RESTAURANT_AGREEMENT_TEXT } from "../shared/agreementTemplates";
 import { notifyOwner } from "./_core/notification";
-import { sendEmail, generateAgreementEmailHTML, generateWhatsAppLink } from "./emailService";
+import { sendEmail, generateAgreementEmailHTML, generateWhatsAppLink } from "./emailServiceResend";
 
 // Input validation schemas
 const agreementTypeSchema = z.enum(["tours", "restaurant"]);
@@ -188,12 +188,18 @@ export const appRouter = router({
         agreementId: z.number(),
       }))
       .mutation(async ({ input }) => {
+        console.log("[sendEmail] Called with agreementId:", input.agreementId);
+        
         const agreement = await getAgreementById(input.agreementId);
         if (!agreement) {
+          console.error("[sendEmail] Agreement not found:", input.agreementId);
           throw new Error("Agreement not found");
         }
 
+        console.log("[sendEmail] Agreement found:", { id: agreement.id, vendorEmail: agreement.vendorEmail, pdfUrl: agreement.pdfUrl });
+
         if (!agreement.pdfUrl) {
+          console.error("[sendEmail] PDF URL missing for agreement:", input.agreementId);
           throw new Error("Agreement PDF not generated yet");
         }
 
@@ -203,11 +209,15 @@ export const appRouter = router({
           agreement.pdfUrl
         );
 
+        console.log("[sendEmail] Attempting to send email to:", agreement.vendorEmail);
+        
         const success = await sendEmail({
           to: agreement.vendorEmail,
           subject: `Your ZNZNOW ${agreement.agreementType === "tours" ? "Tours & Activities" : "Restaurant"} Vendor Agreement`,
           html: emailHtml,
         });
+
+        console.log("[sendEmail] Email send result:", success);
 
         if (success) {
           await updateAgreement(input.agreementId, {
@@ -215,6 +225,7 @@ export const appRouter = router({
             emailSentAt: new Date(),
             status: "delivered",
           });
+          console.log("[sendEmail] Agreement marked as delivered");
         }
 
         return { success, message: success ? "Email sent successfully" : "Failed to send email" };
@@ -226,17 +237,26 @@ export const appRouter = router({
         agreementId: z.number(),
       }))
       .query(async ({ input }) => {
+        console.log("[getWhatsAppLink] Called with agreementId:", input.agreementId);
+        
         const agreement = await getAgreementById(input.agreementId);
         if (!agreement) {
+          console.error("[getWhatsAppLink] Agreement not found:", input.agreementId);
           throw new Error("Agreement not found");
         }
 
+        console.log("[getWhatsAppLink] Agreement found:", { id: agreement.id, phone: agreement.vendorPhone, whatsapp: agreement.vendorWhatsapp });
+
         if (!agreement.pdfUrl) {
+          console.error("[getWhatsAppLink] PDF URL missing for agreement:", input.agreementId);
           throw new Error("Agreement PDF not generated yet");
         }
 
         const phone = agreement.vendorWhatsapp || agreement.vendorPhone;
+        console.log("[getWhatsAppLink] Using phone number:", phone);
+        
         const whatsappLink = generateWhatsAppLink(phone, agreement.vendorName, agreement.pdfUrl);
+        console.log("[getWhatsAppLink] Generated link:", whatsappLink);
 
         return { whatsappLink };
       }),
