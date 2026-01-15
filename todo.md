@@ -58,3 +58,10 @@
 - [x] Prepare project for Vercel deployment - vercel.json and deployment guide created
 - [ ] Test complete end-to-end workflow with fixes
 - [ ] Add Resend API key to environment variables (optional for email)
+
+
+## CRITICAL ISSUES - Current Session (User Reported)
+
+- [x] Agreement text formatting - font size is too tiny, needs proper formatting
+- [x] Email sending not working - debug and fix the email service
+- [x] PDF download not available - users cannot download PDF directly

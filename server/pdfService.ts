@@ -77,8 +77,8 @@ export function generateAgreementHTML(agreement: Agreement): string {
     
     body {
       font-family: 'Times New Roman', Times, serif;
-      font-size: 11pt;
-      line-height: 1.6;
+      font-size: 14pt;
+      line-height: 1.8;
       color: #1a1a1a;
       max-width: 210mm;
       margin: 0 auto;
@@ -127,7 +127,7 @@ export function generateAgreementHTML(agreement: Agreement): string {
     }
     
     .section-title {
-      font-size: 12pt;
+      font-size: 14pt;
       font-weight: bold;
       color: #1a365d;
       margin-bottom: 10px;
@@ -138,6 +138,9 @@ export function generateAgreementHTML(agreement: Agreement): string {
     .content {
       white-space: pre-wrap;
       text-align: justify;
+      font-size: 14pt;
+      line-height: 1.8;
+      letter-spacing: 0.3px;
     }
     
     .parties-box {
@@ -234,9 +237,9 @@ export function generateAgreementHTML(agreement: Agreement): string {
     
     th, td {
       border: 1px solid #ddd;
-      padding: 8px;
+      padding: 12px;
       text-align: left;
-      font-size: 10pt;
+      font-size: 12pt;
     }
     
     th {
@@ -250,7 +253,8 @@ export function generateAgreementHTML(agreement: Agreement): string {
     }
     
     li {
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      font-size: 14pt;
     }
 
     @media print {

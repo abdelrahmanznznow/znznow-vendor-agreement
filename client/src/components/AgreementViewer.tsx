@@ -138,7 +138,7 @@ export function AgreementViewer({
             </div>
 
             {/* Agreement Content */}
-            <div className="agreement-text text-sm leading-relaxed whitespace-pre-wrap">
+            <div className="agreement-text text-base leading-relaxed whitespace-pre-wrap font-serif">
               {agreementText}
             </div>
 
