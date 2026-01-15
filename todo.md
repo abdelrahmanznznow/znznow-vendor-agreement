@@ -65,3 +65,12 @@
 - [x] Agreement text formatting - font size is too tiny, needs proper formatting
 - [x] Email sending not working - debug and fix the email service
 - [x] PDF download not available - users cannot download PDF directly
+
+
+## New Tasks (Current Session)
+
+- [x] Replace email service with SendGrid or Mailgun (more reliable than Resend)
+- [x] Update agreement formatting - improve font type, size, and overall layout
+- [x] Configure Vercel deployment - vercel.json and VERCEL_DEPLOYMENT.md created
+- [ ] Test email sending after deployment
+- [ ] Verify PDF download works on Vercel

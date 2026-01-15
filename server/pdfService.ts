@@ -76,14 +76,15 @@ export function generateAgreementHTML(agreement: Agreement): string {
     }
     
     body {
-      font-family: 'Times New Roman', Times, serif;
-      font-size: 14pt;
-      line-height: 1.8;
-      color: #1a1a1a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 12pt;
+      line-height: 1.9;
+      color: #2c3e50;
       max-width: 210mm;
       margin: 0 auto;
-      padding: 20px;
+      padding: 25px;
       background: white;
+      letter-spacing: 0.2px;
     }
     
     .header {
@@ -94,32 +95,36 @@ export function generateAgreementHTML(agreement: Agreement): string {
     }
     
     .logo {
-      font-size: 28pt;
-      font-weight: bold;
-      color: #1a365d;
-      letter-spacing: 2px;
+      font-size: 32pt;
+      font-weight: 700;
+      color: #0052cc;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
     }
     
     .company-info {
-      font-size: 9pt;
-      color: #666;
-      margin-top: 5px;
+      font-size: 10pt;
+      color: #555;
+      margin-top: 8px;
+      line-height: 1.6;
     }
     
     .agreement-title {
-      font-size: 16pt;
-      font-weight: bold;
+      font-size: 17pt;
+      font-weight: 700;
       text-align: center;
-      color: #1a365d;
-      margin: 30px 0 20px 0;
+      color: #0052cc;
+      margin: 35px 0 25px 0;
       text-transform: uppercase;
+      letter-spacing: 1px;
     }
     
     .agreement-subtitle {
       font-size: 12pt;
       text-align: center;
-      color: #444;
+      color: #0052cc;
       margin-bottom: 30px;
+      font-weight: 600;
     }
     
     .section {
@@ -127,27 +132,30 @@ export function generateAgreementHTML(agreement: Agreement): string {
     }
     
     .section-title {
-      font-size: 14pt;
-      font-weight: bold;
-      color: #1a365d;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 5px;
+      font-size: 13pt;
+      font-weight: 700;
+      color: #0052cc;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #0052cc;
+      padding-bottom: 8px;
+      margin-top: 20px;
     }
     
     .content {
       white-space: pre-wrap;
       text-align: justify;
-      font-size: 14pt;
-      line-height: 1.8;
-      letter-spacing: 0.3px;
+      font-size: 12pt;
+      line-height: 1.9;
+      letter-spacing: 0.2px;
+      margin: 20px 0;
     }
     
     .parties-box {
-      background: #f8f9fa;
-      border: 1px solid #ddd;
+      background: #f0f4ff;
+      border: 2px solid #0052cc;
+      border-radius: 6px;
       padding: 20px;
-      margin: 20px 0;
+      margin: 25px 0;
       border-radius: 5px;
     }
     

@@ -14,8 +14,11 @@
     "BUILT_IN_FORGE_API_KEY": "@built_in_forge_api_key",
     "VITE_FRONTEND_FORGE_API_KEY": "@vite_frontend_forge_api_key",
     "VITE_FRONTEND_FORGE_API_URL": "@vite_frontend_forge_api_url",
-    "RESEND_API_KEY": "@resend_api_key",
-    "NODE_ENV": "production"
+    "SENDGRID_API_KEY": "@sendgrid_api_key",
+    "SENDGRID_FROM_EMAIL": "noreply@znznow.com",
+    "NODE_ENV": "production",
+    "VITE_APP_TITLE": "ZNZNOW Vendor Onboarding",
+    "VITE_APP_LOGO": "/logo.svg"
   },
   "functions": {
     "server/_core/index.ts": {

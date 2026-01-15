@@ -1,4 +1,3 @@
-import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -8,7 +7,10 @@ import { generateAgreementHTML, generatePrintableAgreement } from "./pdfService"
 import { storagePut } from "./storage";
 import { TOURS_PARTNERSHIP_LEVELS, RESTAURANT_PARTNERSHIP_LEVELS, TOURS_AGREEMENT_TEXT, RESTAURANT_AGREEMENT_TEXT } from "../shared/agreementTemplates";
 import { notifyOwner } from "./_core/notification";
-import { sendEmail, generateAgreementEmailHTML, generateWhatsAppLink } from "./emailServiceResend";
+import { sendEmailViaSendGrid, generateAgreementEmailHTML, generateWhatsAppLink } from "./emailServiceSendGrid";
+
+// Cookie name constant
+const COOKIE_NAME = "session";
 
 // Input validation schemas
 const agreementTypeSchema = z.enum(["tours", "restaurant"]);
@@ -206,12 +208,13 @@ export const appRouter = router({
         const emailHtml = generateAgreementEmailHTML(
           agreement.vendorName,
           agreement.agreementType,
+          agreement.id,
           agreement.pdfUrl
         );
 
         console.log("[sendEmail] Attempting to send email to:", agreement.vendorEmail);
         
-        const success = await sendEmail({
+        const success = await sendEmailViaSendGrid({
           to: agreement.vendorEmail,
           subject: `Your ZNZNOW ${agreement.agreementType === "tours" ? "Tours & Activities" : "Restaurant"} Vendor Agreement`,
           html: emailHtml,
@@ -237,65 +240,25 @@ export const appRouter = router({
         agreementId: z.number(),
       }))
       .query(async ({ input }) => {
-        console.log("[getWhatsAppLink] Called with agreementId:", input.agreementId);
-        
         const agreement = await getAgreementById(input.agreementId);
         if (!agreement) {
-          console.error("[getWhatsAppLink] Agreement not found:", input.agreementId);
           throw new Error("Agreement not found");
         }
 
-        console.log("[getWhatsAppLink] Agreement found:", { id: agreement.id, phone: agreement.vendorPhone, whatsapp: agreement.vendorWhatsapp });
-
         if (!agreement.pdfUrl) {
-          console.error("[getWhatsAppLink] PDF URL missing for agreement:", input.agreementId);
           throw new Error("Agreement PDF not generated yet");
         }
 
         const phone = agreement.vendorWhatsapp || agreement.vendorPhone;
-        console.log("[getWhatsAppLink] Using phone number:", phone);
-        
-        const whatsappLink = generateWhatsAppLink(phone, agreement.vendorName, agreement.pdfUrl);
-        console.log("[getWhatsAppLink] Generated link:", whatsappLink);
+        const link = generateWhatsAppLink(
+          phone,
+          agreement.vendorName,
+          agreement.agreementType,
+          agreement.pdfUrl
+        );
 
-        return { whatsappLink };
+        return { link };
       }),
-
-    // Mark WhatsApp as sent (called after user clicks the link)
-    markWhatsAppSent: publicProcedure
-      .input(z.object({
-        agreementId: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        await updateAgreement(input.agreementId, {
-          whatsappSent: true,
-          whatsappSentAt: new Date(),
-          status: "delivered",
-        });
-        return { success: true };
-      }),
-
-    // Get agreement statistics
-    getStats: protectedProcedure.query(async () => {
-      const all = await getAllAgreements();
-      
-      const stats = {
-        total: all.length,
-        byType: {
-          tours: all.filter(a => a.agreementType === "tours").length,
-          restaurant: all.filter(a => a.agreementType === "restaurant").length,
-        },
-        byStatus: {
-          draft: all.filter(a => a.status === "draft").length,
-          pending: all.filter(a => a.status === "pending").length,
-          signed: all.filter(a => a.status === "signed").length,
-          delivered: all.filter(a => a.status === "delivered").length,
-        },
-        recentAgreements: all.slice(0, 5),
-      };
-
-      return stats;
-    }),
   }),
 });
 

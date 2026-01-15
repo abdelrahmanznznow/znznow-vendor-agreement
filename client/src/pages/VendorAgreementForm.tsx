@@ -171,11 +171,7 @@ export default function VendorAgreementForm() {
     },
   });
 
-  // WhatsApp mutation
-  const whatsappMutation = trpc.agreements.getWhatsAppLink.useQuery(
-    { agreementId: submissionSuccess?.agreementId ?? 0 },
-    { enabled: false }
-  );
+
 
   const handleSendEmail = () => {
     console.log("handleSendEmail called with agreementId:", submissionSuccess?.agreementId);
@@ -185,8 +181,7 @@ export default function VendorAgreementForm() {
   };
 
   const handleShareWhatsApp = () => {
-    console.log("handleShareWhatsApp called with agreementId:", submissionSuccess?.agreementId);
-    if (submissionSuccess?.agreementId) {
+    if (submissionSuccess?.agreementId && submissionSuccess?.pdfUrl) {
       const phone = formData.vendorWhatsapp || formData.vendorPhone;
       const cleanPhone = phone.replace(/[^0-9+]/g, "");
       const formattedPhone = cleanPhone.startsWith("+") ? cleanPhone.slice(1) : cleanPhone;
