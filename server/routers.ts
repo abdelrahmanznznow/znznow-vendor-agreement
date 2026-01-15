@@ -8,6 +8,7 @@ import { storagePut } from "./storage";
 import { TOURS_PARTNERSHIP_LEVELS, RESTAURANT_PARTNERSHIP_LEVELS, TOURS_AGREEMENT_TEXT, RESTAURANT_AGREEMENT_TEXT } from "../shared/agreementTemplates";
 import { notifyOwner } from "./_core/notification";
 import { sendEmailViaSendGrid, generateAgreementEmailHTML, generateWhatsAppLink } from "./emailServiceSendGrid";
+import { generatePDFFromHTML } from "./pdfGenerator";
 
 // Cookie name constant
 const COOKIE_NAME = "session";
@@ -101,16 +102,30 @@ export const appRouter = router({
           // Generate HTML for PDF
           const html = generateAgreementHTML(agreement);
 
-          // Store HTML as a file (can be converted to PDF client-side or via service)
-          const timestamp = Date.now();
-          const fileKey = `agreements/${agreementId}-${input.vendorName.replace(/[^a-zA-Z0-9]/g, '_')}-${timestamp}.html`;
-          
-          const { url } = await storagePut(fileKey, html, "text/html");
+          // Generate PDF
+          let pdfUrl = null;
+          let pdfKey = null;
+          try {
+            const { url, key } = await generatePDFFromHTML(
+              html,
+              `${input.agreementType}-agreement-${input.vendorName}`
+            );
+            pdfUrl = url;
+            pdfKey = key;
+          } catch (pdfError) {
+            console.error("PDF generation failed, storing HTML instead:", pdfError);
+            // Fallback: store HTML version
+            const timestamp = Date.now();
+            const fileKey = `agreements/${agreementId}-${input.vendorName.replace(/[^a-zA-Z0-9]/g, '_')}-${timestamp}.html`;
+            const { url } = await storagePut(fileKey, html, "text/html");
+            pdfUrl = url;
+            pdfKey = fileKey;
+          }
 
           // Update agreement with PDF URL
           await updateAgreement(agreementId, {
-            pdfUrl: url,
-            pdfKey: fileKey,
+            pdfUrl,
+            pdfKey,
           });
 
           // Notify owner about new agreement
@@ -122,7 +137,7 @@ export const appRouter = router({
           return {
             success: true,
             agreementId,
-            pdfUrl: url,
+            pdfUrl,
             message: "Agreement submitted successfully",
           };
         } catch (error) {
@@ -258,6 +273,61 @@ export const appRouter = router({
         );
 
         return { link };
+      }),
+
+    // Generate PDF for an agreement
+    generatePDF: publicProcedure
+      .input(z.object({
+        agreementId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const agreement = await getAgreementById(input.agreementId);
+        if (!agreement) {
+          throw new Error("Agreement not found");
+        }
+
+        try {
+          const html = generateAgreementHTML(agreement);
+          const { url, key } = await generatePDFFromHTML(
+            html,
+            `${agreement.agreementType}-agreement-${agreement.vendorName}`
+          );
+
+          await updateAgreement(agreement.id, {
+            pdfUrl: url,
+            pdfKey: key,
+          });
+
+          return {
+            success: true,
+            pdfUrl: url,
+            message: "PDF generated successfully",
+          };
+        } catch (error) {
+          console.error("[PDF] Error generating PDF:", error);
+          throw new Error("Failed to generate PDF");
+        }
+      }),
+
+    // Get PDF download link for an agreement
+    getPDFLink: publicProcedure
+      .input(z.object({
+        agreementId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        const agreement = await getAgreementById(input.agreementId);
+        if (!agreement) {
+          throw new Error("Agreement not found");
+        }
+
+        if (!agreement.pdfUrl) {
+          throw new Error("PDF not yet generated for this agreement");
+        }
+
+        return {
+          pdfUrl: agreement.pdfUrl,
+          filename: `${agreement.agreementType}-agreement-${agreement.vendorName}.pdf`,
+        };
       }),
   }),
 });

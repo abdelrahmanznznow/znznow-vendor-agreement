@@ -218,18 +218,31 @@ export default function VendorAgreementForm() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <Button 
-                onClick={handleDownloadPDF} 
-                className="w-full"
-                disabled={isDownloading}
-              >
-                {isDownloading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4 mr-2" />
-                )}
-                {isDownloading ? "Downloading..." : "Download Signed Agreement (PDF)"}
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  onClick={() => {
+                    if (submissionSuccess?.pdfUrl) {
+                      window.open(submissionSuccess.pdfUrl, '_blank');
+                    }
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View PDF
+                </Button>
+                <Button 
+                  onClick={handleDownloadPDF} 
+                  className="w-full"
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  {isDownloading ? "..." : "Download"}
+                </Button>
+              </div>
               
               <div className="grid grid-cols-2 gap-3">
                 <Button 

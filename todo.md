@@ -74,3 +74,12 @@
 - [x] Configure Vercel deployment - vercel.json and VERCEL_DEPLOYMENT.md created
 - [ ] Test email sending after deployment
 - [ ] Verify PDF download works on Vercel
+
+
+## PDF Generation Tasks (Current Session)
+
+- [x] Install PDF generation library (puppeteer)
+- [x] Create server-side PDF generation service
+- [x] Add PDF storage and retrieval endpoints (generatePDF, getPDFLink)
+- [x] Update UI with PDF view/download button for recipients
+- [x] Test PDF generation and download functionality
